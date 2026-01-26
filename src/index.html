@@ -39,7 +39,7 @@
       }
 
       .container {
-        max-width: 600px;
+        max-width: 650px;
         width: 100%;
       }
 
@@ -295,7 +295,12 @@
         <div id="create-result"></div>
 
         <div class="code-example" id="create-curl-example">
-          <button class="copy-btn" onclick="copyCodeExample('create-curl-example')">Copy</button>
+          <button
+            class="copy-btn"
+            onclick="copyCodeExample('create-curl-example')"
+          >
+            Copy
+          </button>
           curl -X POST https://faucet.nwc.dev?balance=<span id="balance-value"
             >10000</span
           >
@@ -338,7 +343,12 @@
         <div id="pay-result"></div>
 
         <div class="code-example" id="pay-curl-example">
-          <button class="copy-btn" onclick="copyCodeExample('pay-curl-example')">Copy</button>
+          <button
+            class="copy-btn"
+            onclick="copyCodeExample('pay-curl-example')"
+          >
+            Copy
+          </button>
           curl -X POST \<br />https://faucet.nwc.dev/wallets/<span
             id="ln-address-value"
             >nwcxxxxxxxxxx</span
@@ -360,17 +370,24 @@
         navigator.clipboard.writeText(text).then(function () {
           const original = btn.textContent;
           btn.textContent = "Copied!";
-          setTimeout(function () { btn.textContent = original; }, 1500);
+          setTimeout(function () {
+            btn.textContent = original;
+          }, 1500);
         });
       }
 
       function copyCodeExample(id) {
         const el = document.getElementById(id);
-        const text = el.textContent.replace(/\s*Copy\s*/, "").trim().replace(/\s+/g, " ");
+        const text = el.textContent
+          .replace(/\s*Copy\s*/, "")
+          .trim()
+          .replace(/\s+/g, " ");
         const btn = el.querySelector(".copy-btn");
         navigator.clipboard.writeText(text).then(function () {
           btn.textContent = "Copied!";
-          setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+          setTimeout(function () {
+            btn.textContent = "Copy";
+          }, 1500);
         });
       }
 
@@ -413,12 +430,9 @@
           button.disabled = true;
 
           try {
-            const response = await fetch(
-              `/?balance=${balanceInput.value}`,
-              {
-                method: "POST",
-              },
-            );
+            const response = await fetch(`/?balance=${balanceInput.value}`, {
+              method: "POST",
+            });
 
             if (!response.ok) {
               const data = await response.json();
@@ -428,9 +442,11 @@
             const connectionString = await response.text();
 
             resultDiv.innerHTML = `<strong>✅ Wallet Created!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">${connectionString}</span><br><button class="copy-btn-inline" id="copy-connection-string">Copy</button>`;
-            document.getElementById("copy-connection-string").addEventListener("click", function () {
-              copyText(this, connectionString);
-            });
+            document
+              .getElementById("copy-connection-string")
+              .addEventListener("click", function () {
+                copyText(this, connectionString);
+              });
             resultDiv.style.backgroundColor = "#F0FFF4";
             resultDiv.style.color = "#276749";
             resultDiv.style.border = "1px solid #C6F6D5";

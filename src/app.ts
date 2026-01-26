@@ -157,6 +157,80 @@ fastify.post("/", async (request, reply) => {
   }
 });
 
+fastify.post<{ Params: { name: string } }>(
+  "/wallets/:name/topup",
+  async (request, reply) => {
+    const { name } = request.params;
+    const query = request.query as { amount?: string } | undefined;
+    const body = request.body as { amount?: string } | undefined;
+    const amount = body?.amount
+      ? parseInt(body.amount, 10)
+      : query?.amount
+        ? parseInt(query.amount, 10)
+        : undefined;
+
+    try {
+      if (!name || !amount) {
+        throw new Error("missing parameters");
+      }
+
+      // in case lightning address was passed, only take the username component
+      const [appName] = name.split("@");
+
+      console.log(`Looking up app: ${appName}`);
+
+      const appsResponse = await fetch(
+        new URL(
+          `/api/apps?filters=${JSON.stringify({ name: appName })}`,
+          getAlbyHubUrl(),
+        ),
+        {
+          headers: getHeaders(),
+        },
+      );
+
+      if (!appsResponse.ok) {
+        throw new Error(`Failed to list apps: ${appsResponse.status}`);
+      }
+
+      const apps = (await appsResponse.json()) as {
+        apps: {
+          id: string;
+          name: string;
+        }[];
+      };
+      if (apps.apps.length !== 1) {
+        throw new Error(
+          "Unexpected number of apps returned in apps request: " +
+            apps.apps.length,
+        );
+      }
+      const targetApp = apps.apps.find((app) => app.name === appName);
+
+      if (!targetApp) {
+        throw new Error(`App not found: ${appName}.`);
+      }
+
+      console.log(
+        `Found app ${appName} (ID: ${targetApp.id}), transferring ${amount} sats...`,
+      );
+
+      // 2. Transfer funds to the app
+      await transferToApp(targetApp.id, amount);
+
+      return reply.send({
+        message: "Payment successful",
+        amount: amount,
+      });
+    } catch (error) {
+      console.error("Top up failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      reply.status(500).send({ error: errorMessage });
+    }
+  },
+);
+
 const start = async () => {
   try {
     await fastify.listen({

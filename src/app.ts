@@ -30,11 +30,15 @@ function getAlbyHubUrl() {
 }
 
 async function createApp() {
-  const newAppResponse = await fetch(new URL("/api/apps", getAlbyHubUrl()), {
+  const hubUrl = getAlbyHubUrl();
+  const endpoint = new URL("/api/apps", hubUrl);
+  console.log(`Creating app at: ${endpoint.toString()}`);
+
+  const newAppResponse = await fetch(endpoint, {
     method: "POST",
     body: JSON.stringify({
       name: APP_NAME_PREFIX + Math.floor(Date.now() / 1000),
-      pubkey: "",
+      pubkey: process.env.NWC_PUBKEY || "", // Optional pubkey if relevant
       budgetRenewal: "monthly",
       maxAmount: 0,
       scopes: [
@@ -49,14 +53,20 @@ async function createApp() {
       returnTo: "",
       isolated: true,
       metadata: {
-        app_store_app_id: "uncle-jim",
+        app_store_app_id: "nwc-faucet",
       },
     }),
     headers: getHeaders(),
   });
 
   if (!newAppResponse.ok) {
-    throw new Error("Failed to create app: " + (await newAppResponse.text()));
+    const text = await newAppResponse.text();
+    console.error(`Failed to create app at ${endpoint}: ${newAppResponse.status} ${newAppResponse.statusText} - ${text}`);
+
+    if (newAppResponse.status === 404) {
+      throw new Error(`Endpoint not found (${endpoint}). Please check your ALBY_HUB_URL int .env. It should point to your Alby Hub instance, NOT api.getalby.com.`);
+    }
+    throw new Error("Failed to create app: " + text);
   }
 
   const newApp = (await newAppResponse.json()) as {
@@ -156,6 +166,61 @@ fastify.post("/", async (request, reply) => {
     throw error;
   }
 });
+
+
+
+fastify.post("/pay", async (request, reply) => {
+  const body = request.body as { lightningAddress?: string; amount?: string } | undefined;
+  const lightningAddress = body?.lightningAddress;
+  const amount = parseInt(body?.amount || "1000");
+
+  if (!lightningAddress) {
+    reply.status(400).send({ error: "Lightning address is required" });
+    return;
+  }
+
+  // Extract name from lightning address (e.g. "nwc123456" from "nwc123456@getalby.com")
+  const [appName] = lightningAddress.split("@");
+  if (!appName) {
+    reply.status(400).send({ error: "Invalid Lightning Address" });
+    return;
+  }
+
+  try {
+    console.log(`Looking up app: ${appName}`);
+
+    // 1. List all apps to find the one with this name
+    const appsResponse = await fetch(new URL("/api/apps", getAlbyHubUrl()), {
+      headers: getHeaders(),
+    });
+
+    if (!appsResponse.ok) {
+      throw new Error(`Failed to list apps: ${appsResponse.status}`);
+    }
+
+    const apps = (await appsResponse.json()) as { id: string; name: string }[];
+    const targetApp = apps.find((app) => app.name === appName);
+
+    if (!targetApp) {
+      throw new Error(`App not found: ${appName}. Make sure you created the wallet first.`);
+    }
+
+    console.log(`Found app ${appName} (ID: ${targetApp.id}), transferring ${amount} sats...`);
+
+    // 2. Transfer funds to the app
+    await transferToApp(targetApp.id, amount);
+
+    return reply.send({
+      message: "Payment successful",
+      amount: amount,
+    });
+  } catch (error) {
+    console.error("Top up failed:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    reply.status(500).send({ error: errorMessage });
+  }
+});
+
 
 const start = async () => {
   try {

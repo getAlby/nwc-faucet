@@ -1,106 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NWC Faucet</title>
-    <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        max-width: 600px;
-        margin: 50px auto;
-        padding: 20px;
-        text-align: center;
-      }
-      h1 {
-        margin-bottom: 10px;
-      }
-      .subtitle {
-        color: #666;
-        margin-bottom: 30px;
-      }
-      .form-group {
-        margin-bottom: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-      }
-      input[type="number"] {
-        padding: 10px;
-        font-size: 16px;
-        width: 200px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-      }
-      button {
-        padding: 10px 20px;
-        font-size: 16px;
-        background-color: #f7931a;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      button:hover {
-        background-color: #e68a00;
-      }
-      .links {
-        margin-top: 30px;
-      }
-      .code-example {
-        margin-top: 20px;
-        background: #f5f5f5;
-        padding: 15px;
-        border-radius: 4px;
-        text-align: left;
-        font-family: monospace;
-        font-size: 14px;
-        display: inline-flex;
-      }
-      .links a {
-        color: #f7931a;
-        text-decoration: none;
-      }
-      .links a:hover {
-        text-decoration: underline;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>NWC Faucet</h1>
-    <p class="subtitle">
-      Create test wallets for the
-      <a href="https://nwc.dev" target="_blank">NWC protocol</a>.
-    </p>
 
-    <form action="/" method="POST">
-      <div class="form-group">
-        <label for="balance">Starting balance</label>
-        <input type="number" id="balance" name="balance" value="10000" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NWC Faucet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #F8C455;
+      --secondary-color: #2D3748;
+      --bg-color: #F7FAFC;
+      --card-bg: #FFFFFF;
+      --text-color: #1A202C;
+      --text-muted: #718096;
+      --border-color: #E2E8F0;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .logo-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-container img {
+      height: 48px;
+      width: auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      padding: 40px;
+      margin-bottom: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 32px;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--secondary-color);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      color: var(--secondary-color);
+    }
+
+    input[type="number"],
+    input[type="email"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(248, 196, 85, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      font-weight: 600;
+      background-color: var(--primary-color);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.1s, filter 0.2s;
+    }
+
+    button:hover {
+      filter: brightness(1.05);
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .divider {
+      height: 1px;
+      background-color: var(--border-color);
+      margin: 32px 0;
+    }
+
+    .code-example {
+      background: #F8FAFC;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+      color: var(--secondary-color);
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 16px;
+    }
+
+    #pay-result {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    #pay-result:not(:empty) {
+      display: block;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--secondary-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="logo-container">
+      <div data-framer-component-type="SVG" parentsize="0" _constraints="[object Object]" rotation="0" shadows=""
+        class="framer-1rzpk4e" aria-hidden="true"
+        style="image-rendering: pixelated; flex-shrink: 0; background-size: 100% 100%; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 87 36' overflow='visible'%3E%3Cg%3E%3Cpath d='M 19.959 17.968 C 21.379 17.964 22.802 18.235 24.049 18.72 C 24.049 23.396 20.827 25.18 16.791 25.18 C 16.789 25.184 14.343 30.21 20.912 36 C 14.386 36 9.533 32.009 9.533 27.012 C 9.533 25.574 9.913 24.214 10.588 23.006 C 12.259 20.018 15.935 17.968 19.959 17.968 Z M 33.437 14.365 C 33.762 14.365 34.025 14.621 34.025 14.936 C 34.025 15.252 33.762 15.508 33.437 15.508 C 31.919 15.508 30.687 16.694 30.665 18.165 C 32.092 18.65 33.118 19.995 33.118 21.578 L 33.118 25.184 L 29.489 25.184 C 27.485 25.184 25.86 23.569 25.86 21.578 C 25.86 19.586 27.485 17.971 29.489 17.971 L 29.496 17.971 C 29.62 15.959 31.337 14.365 33.437 14.365 Z M 0.238 12.101 C -0.525 9.647 0.506 8.879 3.939 9.31 C 5.601 9.541 8.689 10.507 11.007 11.548 C 14.776 13.233 17.244 15.111 16.979 16.094 C 16.822 16.677 14.992 17.532 13.173 17.884 C 9.46 18.589 5.902 18.067 3.669 16.523 C 2.171 15.497 0.731 13.609 0.238 12.101 Z M 14.797 1.569 C 16.003 -0.702 17.279 -0.52 19.399 2.196 C 20.41 3.528 21.907 6.381 22.805 8.746 C 24.271 12.586 24.68 15.648 23.793 16.157 C 23.267 16.459 21.365 15.778 19.828 14.749 C 16.701 12.637 14.556 9.768 14.077 7.107 C 13.748 5.329 14.072 2.982 14.797 1.569 Z' fill='rgb(255,224,101)'%3E%3C/path%3E%3Cpath d='M 46.122 25.498 C 44.576 25.498 43.377 25.155 42.527 24.47 C 41.676 23.785 41.251 22.817 41.251 21.566 C 41.251 20.229 41.702 19.21 42.604 18.508 C 43.506 17.805 44.765 17.454 46.38 17.454 L 49.834 17.454 L 49.834 19.664 L 47.308 19.664 C 46.156 19.664 45.349 19.823 44.885 20.139 C 44.421 20.457 44.189 20.906 44.189 21.489 C 44.189 21.986 44.391 22.375 44.795 22.658 C 45.198 22.941 45.761 23.082 46.483 23.082 C 47.136 23.082 47.703 22.937 48.184 22.645 C 48.665 22.354 49.039 21.968 49.305 21.489 C 49.572 21.009 49.705 20.469 49.705 19.87 L 50.555 19.87 C 50.555 21.617 50.203 22.992 49.499 23.994 C 48.794 24.996 47.669 25.498 46.122 25.498 Z M 49.834 25.189 L 49.705 22.774 L 49.705 18.585 C 49.705 17.711 49.615 16.978 49.434 16.387 C 49.254 15.796 48.961 15.343 48.558 15.025 C 48.154 14.709 47.617 14.55 46.947 14.55 C 46.329 14.55 45.787 14.678 45.323 14.935 C 44.859 15.192 44.464 15.595 44.138 16.143 L 41.612 15.218 C 41.886 14.653 42.252 14.126 42.707 13.638 C 43.162 13.149 43.738 12.76 44.434 12.468 C 45.13 12.177 45.967 12.031 46.947 12.031 C 48.201 12.031 49.25 12.276 50.091 12.764 C 50.933 13.252 51.556 13.95 51.96 14.858 C 52.364 15.767 52.566 16.863 52.566 18.148 L 52.489 25.189 Z M 54.834 25.189 L 54.834 7.2 L 57.72 7.2 L 57.72 25.189 Z M 60.272 25.189 L 60.272 7.2 L 63.159 7.2 L 63.159 22.799 L 63.004 25.189 Z M 67.231 25.498 C 66.148 25.498 65.216 25.219 64.435 24.662 C 63.652 24.106 63.056 23.322 62.643 22.311 C 62.231 21.3 62.024 20.118 62.024 18.764 C 62.024 17.394 62.231 16.207 62.643 15.205 C 63.056 14.203 63.652 13.424 64.435 12.867 C 65.216 12.31 66.148 12.031 67.231 12.031 C 68.399 12.031 69.418 12.31 70.286 12.867 C 71.153 13.424 71.832 14.203 72.322 15.205 C 72.811 16.207 73.056 17.394 73.056 18.764 C 73.056 20.118 72.811 21.3 72.322 22.311 C 71.832 23.322 71.153 24.106 70.286 24.662 C 69.418 25.219 68.399 25.498 67.231 25.498 Z M 66.51 22.876 C 67.196 22.876 67.806 22.701 68.339 22.349 C 68.872 21.999 69.297 21.514 69.615 20.897 C 69.933 20.281 70.092 19.57 70.092 18.764 C 70.092 17.959 69.941 17.248 69.641 16.631 C 69.34 16.015 68.923 15.535 68.391 15.192 C 67.858 14.85 67.24 14.678 66.535 14.678 C 65.882 14.678 65.298 14.85 64.783 15.192 C 64.267 15.535 63.867 16.015 63.584 16.631 C 63.3 17.248 63.159 17.959 63.159 18.764 C 63.159 19.57 63.3 20.281 63.584 20.897 C 63.867 21.514 64.263 21.999 64.77 22.349 C 65.276 22.701 65.856 22.876 66.51 22.876 Z M 78.726 25.189 L 72.953 12.34 L 76.097 12.34 L 80.582 23.159 L 81.51 25.189 Z M 76.433 30.637 C 76.02 30.637 75.56 30.56 75.054 30.406 C 74.547 30.252 74.061 30.055 73.598 29.815 L 74.68 27.476 C 75.006 27.631 75.307 27.755 75.582 27.849 C 75.857 27.943 76.08 27.99 76.252 27.99 C 76.664 27.99 77.012 27.883 77.296 27.669 C 77.58 27.455 77.807 27.142 77.979 26.731 L 79.5 23.185 L 83.856 12.34 L 87 12.34 L 81.021 26.551 C 80.659 27.374 80.294 28.093 79.925 28.71 C 79.555 29.327 79.096 29.802 78.546 30.136 C 77.996 30.47 77.291 30.637 76.433 30.637 Z' fill='rgb(0,0,0)'%3E%3C/path%3E%3C/g%3E%3C/svg%3E&quot;); width: 87px; height: 36px; margin: 0 auto; opacity: 1;">
       </div>
-      <button type="submit">Create Test Wallet</button>
-    </form>
-
-    <div class="code-example">
-      curl -X POST https://faucet.nwc.dev?balance=<span id="balance-value"
-        >10000</span
-      >
     </div>
 
-    <div class="links">
-      <a href="https://github.com/getAlby/nwc-faucet" target="_blank"
-        >View API docs</a
-      >
+    <div class="card">
+      <h1>NWC Faucet</h1>
+      <p class="subtitle">
+        Build and test your application with ephemeral NWC wallets.
+      </p>
+
+      <h2 class="section-title">🚀 Create Test Wallet</h2>
+      <form action="/" method="POST">
+        <div class="form-group">
+          <label for="balance">Starting Balance (sats)</label>
+          <input type="number" id="balance" name="balance" value="10000" min="0" />
+        </div>
+        <button type="submit">Create Wallet</button>
+      </form>
+
+      <div class="code-example">curl -X POST https://faucet.nwc.dev?balance=<span id="balance-value">10000</span></div>
+
+      <div class="divider"></div>
+
+      <h2 class="section-title">⚡ Top Up Wallet</h2>
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px;">
+        Send sats to any Lightning Address.
+      </p>
+
+      <form id="pay-form">
+        <div class="form-group">
+          <label for="lightningAddress">Lightning Address</label>
+          <input type="email" id="lightningAddress" name="lightningAddress" value="eagervibrance726044@getalby.com"
+            placeholder="eagervibrance726044@getalby.com" required />
+        </div>
+        <div class="form-group">
+          <label for="amount">Amount (sats)</label>
+          <input type="number" id="amount" name="amount" value="1000" min="1" required />
+        </div>
+        <button type="submit">Receive Payment</button>
+      </form>
+      <div id="pay-result"></div>
+
+      <div class="code-example" id="pay-curl-example">curl -X POST https://faucet.nwc.dev/pay \
+        -H "Content-Type: application/json" \
+        -d '{"lightningAddress": "<span id="ln-address-value">nwc_app_name@getalby.com</span>", "amount": <span
+          id="amount-value">1000</span>}'</div>
+
     </div>
-    <script>
-      const balanceInput = document.getElementById("balance");
-      const balanceValue = document.getElementById("balance-value");
-      balanceInput.addEventListener("input", function () {
-        balanceValue.textContent = this.value || "10000";
-      });
-    </script>
-  </body>
+
+    <div class="footer">
+      Powered by <a href="https://github.com/getAlby/hub" target="_blank">Alby Hub</a> •
+      <a href="https://github.com/getAlby/nwc-faucet" target="_blank">View Docs</a>
+    </div>
+  </div>
+
+  <script>
+    // Create Wallet Inputs
+    const balanceInput = document.getElementById("balance");
+    const balanceValue = document.getElementById("balance-value");
+
+    balanceInput.addEventListener("input", function () {
+      balanceValue.textContent = this.value || "10000";
+    });
+
+    // Top Up Inputs
+    const lnAddressInput = document.getElementById("lightningAddress");
+    const amountInput = document.getElementById("amount");
+    const lnAddressValue = document.getElementById("ln-address-value");
+    const amountValue = document.getElementById("amount-value");
+
+    function updatePayExample() {
+      lnAddressValue.textContent = lnAddressInput.value || "nwc_app_name@getalby.com";
+      amountValue.textContent = amountInput.value || "1000";
+    }
+
+    lnAddressInput.addEventListener("input", updatePayExample);
+    amountInput.addEventListener("input", updatePayExample);
+
+    // Handle Pay Submit
+    document.getElementById("pay-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const resultDiv = document.getElementById("pay-result");
+      const button = this.querySelector("button");
+
+      resultDiv.textContent = "Processing payment...";
+      resultDiv.style.backgroundColor = "#EBF8FF";
+      resultDiv.style.color = "#2C5282";
+      resultDiv.style.border = "1px solid #BEE3F8";
+      button.disabled = true;
+
+      try {
+        const response = await fetch("/pay", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            lightningAddress: lnAddressInput.value,
+            amount: amountInput.value,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Payment failed");
+        }
+
+        resultDiv.innerHTML = `<strong>✅ Payment Successful!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">Preimage: ${data.preimage}</span>`;
+        resultDiv.style.backgroundColor = "#F0FFF4";
+        resultDiv.style.color = "#276749";
+        resultDiv.style.border = "1px solid #C6F6D5";
+      } catch (error) {
+        resultDiv.innerHTML = `<strong>❌ Error</strong><br>${error.message}`;
+        resultDiv.style.backgroundColor = "#FFF5F5";
+        resultDiv.style.color = "#C53030";
+        resultDiv.style.border = "1px solid #FED7D7";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+
 </html>

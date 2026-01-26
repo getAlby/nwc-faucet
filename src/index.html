@@ -155,6 +155,7 @@
       .code-example {
         background: #f8fafc;
         padding: 16px;
+        padding-right: 48px;
         border-radius: 8px;
         border: 1px solid var(--border-color);
         font-family: "Monaco", "Consolas", monospace;
@@ -164,8 +165,57 @@
         white-space: nowrap;
         word-break: break-all;
         margin-top: 16px;
+        position: relative;
       }
 
+      .copy-btn {
+        width: auto;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: 500;
+        background: var(--border-color);
+        color: var(--secondary-color);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        position: absolute;
+        top: 8px;
+        right: 8px;
+      }
+
+      .copy-btn:hover {
+        background: #cbd5e0;
+        filter: none;
+      }
+
+      .copy-btn:active {
+        transform: none;
+      }
+
+      .copy-btn-inline {
+        width: auto;
+        display: inline-block;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 500;
+        background: rgba(39, 103, 73, 0.15);
+        color: inherit;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-top: 8px;
+      }
+
+      .copy-btn-inline:hover {
+        background: rgba(39, 103, 73, 0.25);
+        filter: none;
+      }
+
+      .copy-btn-inline:active {
+        transform: none;
+      }
+
+      #create-result,
       #pay-result {
         margin-top: 16px;
         padding: 12px;
@@ -174,6 +224,7 @@
         display: none;
       }
 
+      #create-result:not(:empty),
       #pay-result:not(:empty) {
         display: block;
       }
@@ -228,7 +279,7 @@
         </p>
 
         <h2 class="section-title">🚀 Create Test Wallet</h2>
-        <form action="/" method="POST">
+        <form id="create-form">
           <div class="form-group">
             <label for="balance">Starting Balance (sats)</label>
             <input
@@ -241,8 +292,10 @@
           </div>
           <button type="submit">Create Wallet</button>
         </form>
+        <div id="create-result"></div>
 
-        <div class="code-example">
+        <div class="code-example" id="create-curl-example">
+          <button class="copy-btn" onclick="copyCodeExample('create-curl-example')">Copy</button>
           curl -X POST https://faucet.nwc.dev?balance=<span id="balance-value"
             >10000</span
           >
@@ -285,6 +338,7 @@
         <div id="pay-result"></div>
 
         <div class="code-example" id="pay-curl-example">
+          <button class="copy-btn" onclick="copyCodeExample('pay-curl-example')">Copy</button>
           curl -X POST \<br />https://faucet.nwc.dev/wallets/<span
             id="ln-address-value"
             >nwcxxxxxxxxxx</span
@@ -302,6 +356,24 @@
     </div>
 
     <script>
+      function copyText(btn, text) {
+        navigator.clipboard.writeText(text).then(function () {
+          const original = btn.textContent;
+          btn.textContent = "Copied!";
+          setTimeout(function () { btn.textContent = original; }, 1500);
+        });
+      }
+
+      function copyCodeExample(id) {
+        const el = document.getElementById(id);
+        const text = el.textContent.replace(/\s*Copy\s*/, "").trim().replace(/\s+/g, " ");
+        const btn = el.querySelector(".copy-btn");
+        navigator.clipboard.writeText(text).then(function () {
+          btn.textContent = "Copied!";
+          setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+        });
+      }
+
       // Create Wallet Inputs
       const balanceInput = document.getElementById("balance");
       const balanceValue = document.getElementById("balance-value");
@@ -325,6 +397,52 @@
 
       lnAddressInput.addEventListener("input", updatePayExample);
       amountInput.addEventListener("input", updatePayExample);
+
+      // Handle Create Wallet Submit
+      document
+        .getElementById("create-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const resultDiv = document.getElementById("create-result");
+          const button = this.querySelector("button");
+
+          resultDiv.textContent = "Creating wallet...";
+          resultDiv.style.backgroundColor = "#EBF8FF";
+          resultDiv.style.color = "#2C5282";
+          resultDiv.style.border = "1px solid #BEE3F8";
+          button.disabled = true;
+
+          try {
+            const response = await fetch(
+              `/?balance=${balanceInput.value}`,
+              {
+                method: "POST",
+              },
+            );
+
+            if (!response.ok) {
+              const data = await response.json();
+              throw new Error(data.error || "Failed to create wallet");
+            }
+
+            const connectionString = await response.text();
+
+            resultDiv.innerHTML = `<strong>✅ Wallet Created!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">${connectionString}</span><br><button class="copy-btn-inline" id="copy-connection-string">Copy</button>`;
+            document.getElementById("copy-connection-string").addEventListener("click", function () {
+              copyText(this, connectionString);
+            });
+            resultDiv.style.backgroundColor = "#F0FFF4";
+            resultDiv.style.color = "#276749";
+            resultDiv.style.border = "1px solid #C6F6D5";
+          } catch (error) {
+            resultDiv.innerHTML = `<strong>❌ Error</strong><br>${error.message}`;
+            resultDiv.style.backgroundColor = "#FFF5F5";
+            resultDiv.style.color = "#C53030";
+            resultDiv.style.border = "1px solid #FED7D7";
+          } finally {
+            button.disabled = false;
+          }
+        });
 
       // Handle Pay Submit
       document

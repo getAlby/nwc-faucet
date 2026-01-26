@@ -30,15 +30,11 @@ function getAlbyHubUrl() {
 }
 
 async function createApp() {
-  const hubUrl = getAlbyHubUrl();
-  const endpoint = new URL("/api/apps", hubUrl);
-  console.log(`Creating app at: ${endpoint.toString()}`);
-
-  const newAppResponse = await fetch(endpoint, {
+  const newAppResponse = await fetch(new URL("/api/apps", getAlbyHubUrl()), {
     method: "POST",
     body: JSON.stringify({
       name: APP_NAME_PREFIX + Math.floor(Date.now() / 1000),
-      pubkey: process.env.NWC_PUBKEY || "", // Optional pubkey if relevant
+      pubkey: "",
       budgetRenewal: "monthly",
       maxAmount: 0,
       scopes: [
@@ -53,20 +49,14 @@ async function createApp() {
       returnTo: "",
       isolated: true,
       metadata: {
-        app_store_app_id: "nwc-faucet",
+        app_store_app_id: "uncle-jim",
       },
     }),
     headers: getHeaders(),
   });
 
   if (!newAppResponse.ok) {
-    const text = await newAppResponse.text();
-    console.error(`Failed to create app at ${endpoint}: ${newAppResponse.status} ${newAppResponse.statusText} - ${text}`);
-
-    if (newAppResponse.status === 404) {
-      throw new Error(`Endpoint not found (${endpoint}). Please check your ALBY_HUB_URL int .env. It should point to your Alby Hub instance, NOT api.getalby.com.`);
-    }
-    throw new Error("Failed to create app: " + text);
+    throw new Error("Failed to create app: " + (await newAppResponse.text()));
   }
 
   const newApp = (await newAppResponse.json()) as {
@@ -167,10 +157,10 @@ fastify.post("/", async (request, reply) => {
   }
 });
 
-
-
 fastify.post("/pay", async (request, reply) => {
-  const body = request.body as { lightningAddress?: string; amount?: string } | undefined;
+  const body = request.body as
+    | { lightningAddress?: string; amount?: string }
+    | undefined;
   const lightningAddress = body?.lightningAddress;
   const amount = parseInt(body?.amount || "1000");
 
@@ -202,10 +192,14 @@ fastify.post("/pay", async (request, reply) => {
     const targetApp = apps.find((app) => app.name === appName);
 
     if (!targetApp) {
-      throw new Error(`App not found: ${appName}. Make sure you created the wallet first.`);
+      throw new Error(
+        `App not found: ${appName}. Make sure you created the wallet first.`,
+      );
     }
 
-    console.log(`Found app ${appName} (ID: ${targetApp.id}), transferring ${amount} sats...`);
+    console.log(
+      `Found app ${appName} (ID: ${targetApp.id}), transferring ${amount} sats...`,
+    );
 
     // 2. Transfer funds to the app
     await transferToApp(targetApp.id, amount);
@@ -220,7 +214,6 @@ fastify.post("/pay", async (request, reply) => {
     reply.status(500).send({ error: errorMessage });
   }
 });
-
 
 const start = async () => {
   try {

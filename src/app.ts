@@ -157,63 +157,79 @@ fastify.post("/", async (request, reply) => {
   }
 });
 
-fastify.post("/pay", async (request, reply) => {
-  const body = request.body as
-    | { lightningAddress?: string; amount?: string }
-    | undefined;
-  const lightningAddress = body?.lightningAddress;
-  const amount = parseInt(body?.amount || "1000");
+fastify.post<{ Params: { name: string } }>(
+  "/wallets/:name/topup",
+  async (request, reply) => {
+    const { name } = request.params;
+    const query = request.query as { amount?: string } | undefined;
+    const body = request.body as { amount?: string } | undefined;
+    const amount = body?.amount
+      ? parseInt(body.amount, 10)
+      : query?.amount
+        ? parseInt(query.amount, 10)
+        : undefined;
 
-  if (!lightningAddress) {
-    reply.status(400).send({ error: "Lightning address is required" });
-    return;
-  }
+    try {
+      if (!name || !amount) {
+        throw new Error("missing parameters");
+      }
 
-  // Extract name from lightning address (e.g. "nwc123456" from "nwc123456@getalby.com")
-  const [appName] = lightningAddress.split("@");
-  if (!appName) {
-    reply.status(400).send({ error: "Invalid Lightning Address" });
-    return;
-  }
+      // in case lightning address was passed, only take the username component
+      const [appName] = name.split("@");
 
-  try {
-    console.log(`Looking up app: ${appName}`);
+      console.log(`Looking up app: ${appName}`);
 
-    // 1. List all apps to find the one with this name
-    const appsResponse = await fetch(new URL("/api/apps", getAlbyHubUrl()), {
-      headers: getHeaders(),
-    });
-
-    if (!appsResponse.ok) {
-      throw new Error(`Failed to list apps: ${appsResponse.status}`);
-    }
-
-    const apps = (await appsResponse.json()) as { id: string; name: string }[];
-    const targetApp = apps.find((app) => app.name === appName);
-
-    if (!targetApp) {
-      throw new Error(
-        `App not found: ${appName}. Make sure you created the wallet first.`,
+      const appsResponse = await fetch(
+        new URL(
+          `/api/apps?filters=${JSON.stringify({ name: appName })}`,
+          getAlbyHubUrl(),
+        ),
+        {
+          headers: getHeaders(),
+        },
       );
+
+      if (!appsResponse.ok) {
+        throw new Error(`Failed to list apps: ${appsResponse.status}`);
+      }
+
+      const apps = (await appsResponse.json()) as {
+        apps: {
+          id: string;
+          name: string;
+        }[];
+      };
+      if (apps.apps.length !== 1) {
+        throw new Error(
+          "Unexpected number of apps returned in apps request: " +
+            apps.apps.length,
+        );
+      }
+      const targetApp = apps.apps.find((app) => app.name === appName);
+
+      if (!targetApp) {
+        throw new Error(`App not found: ${appName}.`);
+      }
+
+      console.log(
+        `Found app ${appName} (ID: ${targetApp.id}), transferring ${amount} sats...`,
+      );
+
+      // 2. Transfer funds to the app
+      await transferToApp(targetApp.id, amount);
+
+      return reply.send({
+        message: "Payment successful",
+        amount: amount,
+      });
+    } catch (error) {
+      console.error("Top up failed:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      reply.status(500).send({ error: errorMessage });
     }
-
-    console.log(
-      `Found app ${appName} (ID: ${targetApp.id}), transferring ${amount} sats...`,
-    );
-
-    // 2. Transfer funds to the app
-    await transferToApp(targetApp.id, amount);
-
-    return reply.send({
-      message: "Payment successful",
-      amount: amount,
-    });
-  } catch (error) {
-    console.error("Top up failed:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    reply.status(500).send({ error: errorMessage });
-  }
-});
+  },
+);
 
 const start = async () => {
   try {

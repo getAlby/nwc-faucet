@@ -34,6 +34,28 @@ Then you can top up any wallet that was created by the faucet. The amount parame
 curl -X POST https://faucet.nwc.dev/wallets/nwc1769067475/topup?amount=10000
 ```
 
+### Make an invoice
+
+Create a BOLT-11 lightning invoice from the faucet's main wallet. The amount parameter is in sats.
+
+```bash
+curl -X POST https://faucet.nwc.dev/make-invoice?amount=1000
+```
+
+You can optionally include a description:
+
+```bash
+curl -X POST "https://faucet.nwc.dev/make-invoice?amount=1000&description=Test%20payment"
+```
+
+### Pay an invoice
+
+Pay a BOLT-11 lightning invoice from the faucet's main wallet.
+
+```bash
+curl -X POST https://faucet.nwc.dev/pay-invoice?invoice=lnbc...
+```
+
 ## Development
 
 ### Setup env

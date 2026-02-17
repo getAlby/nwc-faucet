@@ -231,6 +231,83 @@ fastify.post<{ Params: { name: string } }>(
   },
 );
 
+fastify.post("/make-invoice", async (request, reply) => {
+  const query = request.query as
+    | { amount?: string; description?: string }
+    | undefined;
+  const body = request.body as
+    | { amount?: string; description?: string }
+    | undefined;
+  const description = body?.description || query?.description || undefined;
+  const amountSat = body?.amount
+    ? parseInt(body.amount, 10)
+    : query?.amount
+      ? parseInt(query.amount, 10)
+      : undefined;
+
+  try {
+    if (!amountSat) {
+      throw new Error("missing amount parameter");
+    }
+
+    const invoiceResponse = await fetch(
+      new URL("/api/invoices", getAlbyHubUrl()),
+      {
+        method: "POST",
+        headers: getHeaders(),
+        body: JSON.stringify({
+          amount: amountSat * 1000,
+          ...(description ? { description } : {}),
+        }),
+      },
+    );
+
+    if (!invoiceResponse.ok) {
+      throw new Error(
+        "Failed to create invoice: " + (await invoiceResponse.text()),
+      );
+    }
+
+    const result = await invoiceResponse.json();
+    return reply.send(result);
+  } catch (error) {
+    console.error("Make invoice failed:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    reply.status(500).send({ error: errorMessage });
+  }
+});
+
+fastify.post("/pay-invoice", async (request, reply) => {
+  const query = request.query as { invoice?: string } | undefined;
+  const body = request.body as { invoice?: string } | undefined;
+  const invoice = body?.invoice || query?.invoice;
+
+  try {
+    if (!invoice) {
+      throw new Error("missing invoice parameter");
+    }
+
+    const paymentResponse = await fetch(
+      new URL(`/api/payments/${invoice}`, getAlbyHubUrl()),
+      {
+        method: "POST",
+        headers: getHeaders(),
+      },
+    );
+
+    if (!paymentResponse.ok) {
+      throw new Error("Payment failed: " + (await paymentResponse.text()));
+    }
+
+    const result = await paymentResponse.json();
+    return reply.send(result);
+  } catch (error) {
+    console.error("Pay invoice failed:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    reply.status(500).send({ error: errorMessage });
+  }
+});
+
 const start = async () => {
   try {
     await fastify.listen({

@@ -107,6 +107,7 @@
         color: var(--secondary-color);
       }
 
+      textarea,
       input[type="number"],
       input[type="email"],
       input[type="text"] {
@@ -118,7 +119,13 @@
         transition: border-color 0.2s;
       }
 
-      input:focus {
+      textarea {
+        resize: vertical;
+        font-family: "Inter", sans-serif;
+      }
+
+      input:focus,
+      textarea:focus {
         outline: none;
         border-color: var(--primary-color);
         box-shadow: 0 0 0 3px rgba(248, 196, 85, 0.2);
@@ -222,7 +229,9 @@
       }
 
       #create-result,
-      #pay-result {
+      #pay-result,
+      #invoice-result,
+      #make-invoice-result {
         margin-top: 16px;
         padding: 12px;
         border-radius: 8px;
@@ -231,7 +240,9 @@
       }
 
       #create-result:not(:empty),
-      #pay-result:not(:empty) {
+      #pay-result:not(:empty),
+      #invoice-result:not(:empty),
+      #make-invoice-result:not(:empty) {
         display: block;
       }
 
@@ -361,6 +372,87 @@
             id="ln-address-value"
             >nwcxxxxxxxxxx</span
           >/topup?amount=<span id="amount-value">1000</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2 class="section-title">💸 Pay Invoice</h2>
+        <p
+          style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px"
+        >
+          Pay a BOLT-11 lightning invoice from the faucet
+        </p>
+
+        <form id="invoice-form">
+          <div class="form-group">
+            <label for="invoice">BOLT-11 Invoice</label>
+            <textarea
+              id="invoice"
+              name="invoice"
+              rows="3"
+              placeholder="lnbc..."
+              required
+            ></textarea>
+          </div>
+          <button type="submit">Pay Invoice</button>
+        </form>
+        <div id="invoice-result"></div>
+
+        <div class="code-example" id="invoice-curl-example">
+          <button
+            class="copy-btn"
+            onclick="copyCodeExample('invoice-curl-example')"
+          >
+            Copy
+          </button>
+          curl -X POST \&nbsp;<br />https://faucet.nwc.dev/pay-invoice?invoice=lnbc...
+        </div>
+
+        <div class="divider"></div>
+
+        <h2 class="section-title">🧾 Make Invoice</h2>
+        <p
+          style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px"
+        >
+          Create a BOLT-11 lightning invoice from the faucet
+        </p>
+
+        <form id="make-invoice-form">
+          <div class="form-group">
+            <label for="invoiceAmount">Amount (sats)</label>
+            <input
+              type="number"
+              id="invoiceAmount"
+              name="amount"
+              value="1000"
+              min="1"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="invoiceDescription">Description (optional)</label>
+            <input
+              type="text"
+              id="invoiceDescription"
+              name="description"
+              placeholder="e.g. Test payment"
+            />
+          </div>
+          <button type="submit">Create Invoice</button>
+        </form>
+        <div id="make-invoice-result"></div>
+
+        <div class="code-example" id="make-invoice-curl-example">
+          <button
+            class="copy-btn"
+            onclick="copyCodeExample('make-invoice-curl-example')"
+          >
+            Copy
+          </button>
+          curl -X POST \&nbsp;<br />https://faucet.nwc.dev/make-invoice?amount=<span
+            id="invoice-amount-value"
+            >1000</span
+          ><span id="invoice-description-param"></span>
         </div>
       </div>
 
@@ -497,6 +589,122 @@
             }
 
             resultDiv.innerHTML = `<strong>✅ Payment Successful!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">Amount: ${data.amount}</span>`;
+            resultDiv.style.backgroundColor = "#F0FFF4";
+            resultDiv.style.color = "#276749";
+            resultDiv.style.border = "1px solid #C6F6D5";
+          } catch (error) {
+            resultDiv.innerHTML = `<strong>❌ Error</strong><br>${error.message}`;
+            resultDiv.style.backgroundColor = "#FFF5F5";
+            resultDiv.style.color = "#C53030";
+            resultDiv.style.border = "1px solid #FED7D7";
+          } finally {
+            button.disabled = false;
+          }
+        });
+
+      // Handle Pay Invoice Submit
+      document
+        .getElementById("invoice-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const resultDiv = document.getElementById("invoice-result");
+          const button = this.querySelector("button");
+          const invoiceInput = document.getElementById("invoice");
+
+          resultDiv.textContent = "Processing payment...";
+          resultDiv.style.backgroundColor = "#EBF8FF";
+          resultDiv.style.color = "#2C5282";
+          resultDiv.style.border = "1px solid #BEE3F8";
+          button.disabled = true;
+
+          try {
+            const response = await fetch("/pay-invoice", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ invoice: invoiceInput.value.trim() }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.error || "Payment failed");
+            }
+
+            resultDiv.innerHTML = `<strong>✅ Payment Successful!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">Preimage: ${data.preimage}</span><br><button class="copy-btn-inline" id="copy-preimage">Copy Preimage</button>`;
+            document
+              .getElementById("copy-preimage")
+              .addEventListener("click", function () {
+                copyText(this, data.preimage);
+              });
+            resultDiv.style.backgroundColor = "#F0FFF4";
+            resultDiv.style.color = "#276749";
+            resultDiv.style.border = "1px solid #C6F6D5";
+          } catch (error) {
+            resultDiv.innerHTML = `<strong>❌ Error</strong><br>${error.message}`;
+            resultDiv.style.backgroundColor = "#FFF5F5";
+            resultDiv.style.color = "#C53030";
+            resultDiv.style.border = "1px solid #FED7D7";
+          } finally {
+            button.disabled = false;
+          }
+        });
+
+      // Make Invoice Inputs
+      const invoiceAmountInput = document.getElementById("invoiceAmount");
+      const invoiceAmountValue = document.getElementById(
+        "invoice-amount-value",
+      );
+      const invoiceDescriptionInput = document.getElementById("invoiceDescription");
+      const invoiceDescriptionParam = document.getElementById("invoice-description-param");
+
+      function updateMakeInvoiceExample() {
+        invoiceAmountValue.textContent = invoiceAmountInput.value || "1000";
+        const desc = invoiceDescriptionInput.value.trim();
+        invoiceDescriptionParam.textContent = desc ? `&description=${encodeURIComponent(desc)}` : "";
+      }
+
+      invoiceAmountInput.addEventListener("input", updateMakeInvoiceExample);
+      invoiceDescriptionInput.addEventListener("input", updateMakeInvoiceExample);
+
+      // Handle Make Invoice Submit
+      document
+        .getElementById("make-invoice-form")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          const resultDiv = document.getElementById("make-invoice-result");
+          const button = this.querySelector("button");
+
+          resultDiv.textContent = "Creating invoice...";
+          resultDiv.style.backgroundColor = "#EBF8FF";
+          resultDiv.style.color = "#2C5282";
+          resultDiv.style.border = "1px solid #BEE3F8";
+          button.disabled = true;
+
+          try {
+            const descriptionInput = document.getElementById("invoiceDescription");
+            const params = new URLSearchParams({ amount: invoiceAmountInput.value });
+            if (descriptionInput.value.trim()) {
+              params.set("description", descriptionInput.value.trim());
+            }
+            const response = await fetch(
+              `/make-invoice?${params}`,
+              {
+                method: "POST",
+              },
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.error || "Failed to create invoice");
+            }
+
+            resultDiv.innerHTML = `<strong>✅ Invoice Created!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">${data.invoice}</span><br><button class="copy-btn-inline" id="copy-invoice">Copy Invoice</button>`;
+            document
+              .getElementById("copy-invoice")
+              .addEventListener("click", function () {
+                copyText(this, data.invoice);
+              });
             resultDiv.style.backgroundColor = "#F0FFF4";
             resultDiv.style.color = "#276749";
             resultDiv.style.border = "1px solid #C6F6D5";

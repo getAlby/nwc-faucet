@@ -33,7 +33,7 @@ async function createApp() {
   const newAppResponse = await fetch(new URL("/api/apps", getAlbyHubUrl()), {
     method: "POST",
     body: JSON.stringify({
-      name: APP_NAME_PREFIX + Math.floor(Date.now() / 1000),
+      name: APP_NAME_PREFIX + Date.now(),
       pubkey: "",
       budgetRenewal: "monthly",
       maxAmount: 0,
@@ -114,6 +114,8 @@ async function createLightningAddress(
   }
 }
 
+let appCreationQueue = Promise.resolve<void>(undefined);
+
 const fastify = Fastify({ logger: true });
 
 // Register static file serving for the HTML page
@@ -140,16 +142,26 @@ fastify.post("/", async (request, reply) => {
       ? parseInt(query.balance, 10)
       : undefined;
 
+  const resultPromise = new Promise<string>((resolve, reject) => {
+    appCreationQueue = appCreationQueue.then(async () => {
+      try {
+        const newApp = await createApp();
+        if (balance !== undefined && balance > 0) {
+          await transferToApp(newApp.id, balance);
+        }
+        await createLightningAddress(newApp.id, newApp.name);
+        await new Promise((r) => setTimeout(r, 1)); // enforce 1 ms gap between creations
+        resolve(`${newApp.pairingUri}&lud16=${newApp.name}@getalby.com`);
+      } catch (error) {
+        console.error(error);
+        reject(error);
+        // do NOT rethrow — keeps appCreationQueue in a resolved state
+      }
+    });
+  });
+
   try {
-    const newApp = await createApp();
-
-    if (balance !== undefined && balance > 0) {
-      await transferToApp(newApp.id, balance);
-    }
-
-    await createLightningAddress(newApp.id, newApp.name);
-
-    return `${newApp.pairingUri}&lud16=${newApp.name}@getalby.com`;
+    return await resultPromise;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     reply.status(500).send({ error: errorMessage });

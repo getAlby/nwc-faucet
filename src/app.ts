@@ -11,6 +11,10 @@ function removeTrailingSlash(url: string): string {
   return url.replace(/\/$/, "");
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 function getHeaders() {
   return {
     Authorization: `Bearer ${process.env.AUTH_TOKEN}`,
@@ -90,6 +94,78 @@ async function transferToApp(appId: string, amountSat: number): Promise<void> {
   }
 }
 
+async function deleteApp(appPubkey: string): Promise<void> {
+  const response = await fetch(
+    new URL(`/api/apps/${appPubkey}`, getAlbyHubUrl()),
+    {
+      method: "DELETE",
+      headers: getHeaders(),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to delete app: " + (await response.text()));
+  }
+}
+
+async function cleanupUnusedApps(): Promise<void> {
+  const pageSize = 100;
+  let offset = 0;
+  let pageLength = pageSize;
+  const candidates: { appPubkey: string; name: string; createdAt: string }[] =
+    [];
+
+  console.log("Starting unused apps cleanup...");
+
+  while (pageLength === pageSize) {
+    const url = new URL("/api/apps", getAlbyHubUrl());
+    url.searchParams.set("limit", String(pageSize));
+    url.searchParams.set("offset", String(offset));
+    url.searchParams.set("filters", JSON.stringify({ unused: true }));
+
+    const response = await fetch(url, { headers: getHeaders() });
+    if (!response.ok) {
+      throw new Error("Failed to list unused apps: " + (await response.text()));
+    }
+
+    const { apps } = (await response.json()) as {
+      apps: { appPubkey: string; name: string; createdAt: string }[];
+    };
+
+    candidates.push(...apps);
+    pageLength = apps.length;
+    offset += pageSize;
+    await sleep(1000);
+  }
+
+  let numDeletedApps = 0;
+  for (const app of candidates) {
+    if (Date.now() - new Date(app.createdAt).getTime() < 24 * 60 * 60 * 1000) {
+      console.log(
+        `Skipping unused app created in last 24h: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
+      );
+      continue;
+    }
+    if (!app.name.startsWith(APP_NAME_PREFIX)) {
+      console.log(`Skipping non-faucet app: ${app.name} (${app.appPubkey})`);
+      continue;
+    }
+    // TODO: ensure the app's createdAt is at least an hour old before deleting,
+    // so we don't race with in-flight faucet creations.
+    console.log(
+      `Deleting unused app: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
+    );
+    await deleteApp(app.appPubkey);
+    // Don't abuse the delete endpoint
+    await sleep(100);
+    ++numDeletedApps;
+  }
+
+  console.log(
+    `Unused apps cleanup done. Scanned ${candidates.length} apps, deleted ${numDeletedApps}.`,
+  );
+}
+
 async function createLightningAddress(
   appId: string,
   address: string,
@@ -150,7 +226,7 @@ fastify.post("/", async (request, reply) => {
           await transferToApp(newApp.id, balance);
         }
         await createLightningAddress(newApp.id, newApp.name);
-        await new Promise((r) => setTimeout(r, 1)); // enforce 1 ms gap between creations
+        await sleep(1); // enforce 1 ms gap between creations
         resolve(`${newApp.pairingUri}&lud16=${newApp.name}@getalby.com`);
       } catch (error) {
         console.error(error);
@@ -326,6 +402,17 @@ const start = async () => {
       port: parseInt(process.env.PORT || "3000"),
       host: "0.0.0.0",
     });
+
+    (async () => {
+      while (true) {
+        try {
+          await cleanupUnusedApps();
+        } catch (err) {
+          fastify.log.error({ err }, "cleanupUnusedApps failed");
+        }
+        await sleep(60 * 60 * 1000); // 1 hour
+      }
+    })();
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

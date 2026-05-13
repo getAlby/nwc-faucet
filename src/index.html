@@ -80,8 +80,15 @@
       .subtitle {
         color: var(--text-muted);
         text-align: center;
-        margin-bottom: 32px;
+        margin-bottom: 0px;
         font-size: 16px;
+        line-height: 1.5;
+      }
+      .subtitle-2 {
+        color: var(--text-muted);
+        text-align: center;
+        margin-bottom: 32px;
+        font-size: 12px;
         line-height: 1.5;
       }
 
@@ -292,9 +299,12 @@
       <div class="card">
         <h1>NWC Faucet</h1>
         <p class="subtitle">
-          Create test wallets for the
+          Create dummy sub-wallets for testing the
           <a href="https://nwc.dev" class="link" target="_blank">NWC protocol</a
           >.
+        </p>
+        <p class="subtitle-2">
+          Balances are not real and exist only inside the NWC Faucet.
         </p>
 
         <h2 class="section-title">🚀 Create Test Wallet</h2>
@@ -327,7 +337,7 @@
 
         <div class="divider"></div>
 
-        <h2 class="section-title">⚡ Top Up Wallet</h2>
+        <h2 class="section-title">⚡ Top Up Sub-Wallet</h2>
         <p
           style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px"
         >
@@ -457,7 +467,7 @@
       </div>
 
       <div class="footer">
-        Powered by
+        Sub-wallets powered by
         <a href="https://github.com/getAlby/hub" target="_blank">Alby Hub</a> •
         <a href="https://github.com/getAlby/nwc-faucet" target="_blank"
           >Faucet Docs</a
@@ -536,12 +546,14 @@
 
             if (!response.ok) {
               const data = await response.json();
-              throw new Error(data.error || "Failed to create wallet");
+              throw new Error(
+                data.error || "Failed to create wallet connection",
+              );
             }
 
             const connectionString = await response.text();
 
-            resultDiv.innerHTML = `<strong>✅ Wallet Created!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">${connectionString}</span><br><button class="copy-btn-inline" id="copy-connection-string">Copy</button>`;
+            resultDiv.innerHTML = `<strong>✅ Wallet Connection Created!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">${connectionString}</span><br><button class="copy-btn-inline" id="copy-connection-string">Copy</button><div style="font-size:12px; opacity: 0.7; margin-top: 8px;">ℹ️ Connect to your wallet within 24 hours. Unused connections are deleted after 60 days.</div>`;
             document
               .getElementById("copy-connection-string")
               .addEventListener("click", function () {
@@ -654,17 +666,25 @@
       const invoiceAmountValue = document.getElementById(
         "invoice-amount-value",
       );
-      const invoiceDescriptionInput = document.getElementById("invoiceDescription");
-      const invoiceDescriptionParam = document.getElementById("invoice-description-param");
+      const invoiceDescriptionInput =
+        document.getElementById("invoiceDescription");
+      const invoiceDescriptionParam = document.getElementById(
+        "invoice-description-param",
+      );
 
       function updateMakeInvoiceExample() {
         invoiceAmountValue.textContent = invoiceAmountInput.value || "1000";
         const desc = invoiceDescriptionInput.value.trim();
-        invoiceDescriptionParam.textContent = desc ? `&description=${encodeURIComponent(desc)}` : "";
+        invoiceDescriptionParam.textContent = desc
+          ? `&description=${encodeURIComponent(desc)}`
+          : "";
       }
 
       invoiceAmountInput.addEventListener("input", updateMakeInvoiceExample);
-      invoiceDescriptionInput.addEventListener("input", updateMakeInvoiceExample);
+      invoiceDescriptionInput.addEventListener(
+        "input",
+        updateMakeInvoiceExample,
+      );
 
       // Handle Make Invoice Submit
       document
@@ -681,17 +701,17 @@
           button.disabled = true;
 
           try {
-            const descriptionInput = document.getElementById("invoiceDescription");
-            const params = new URLSearchParams({ amount: invoiceAmountInput.value });
+            const descriptionInput =
+              document.getElementById("invoiceDescription");
+            const params = new URLSearchParams({
+              amount: invoiceAmountInput.value,
+            });
             if (descriptionInput.value.trim()) {
               params.set("description", descriptionInput.value.trim());
             }
-            const response = await fetch(
-              `/make-invoice?${params}`,
-              {
-                method: "POST",
-              },
-            );
+            const response = await fetch(`/make-invoice?${params}`, {
+              method: "POST",
+            });
 
             const data = await response.json();
 

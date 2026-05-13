@@ -307,7 +307,7 @@
           Balances are not real and exist only inside the NWC Faucet.
         </p>
 
-        <h2 class="section-title">🚀 Create Test Wallet</h2>
+        <h2 class="section-title">🚀 Create Dummy Sub-Wallet</h2>
         <form id="create-form">
           <div class="form-group">
             <label for="balance">Starting Balance (sats)</label>
@@ -546,14 +546,12 @@
 
             if (!response.ok) {
               const data = await response.json();
-              throw new Error(
-                data.error || "Failed to create wallet connection",
-              );
+              throw new Error(data.error || "Failed to create sub-wallet");
             }
 
             const connectionString = await response.text();
 
-            resultDiv.innerHTML = `<strong>✅ Wallet Connection Created!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">${connectionString}</span><br><button class="copy-btn-inline" id="copy-connection-string">Copy</button><div style="font-size:12px; opacity: 0.7; margin-top: 8px;">ℹ️ Connect to your wallet within 24 hours. Unused connections are deleted after 60 days.</div>`;
+            resultDiv.innerHTML = `<strong>✅ Wallet Connection Created!</strong><br><span style="font-size:12px; opacity: 0.8; overflow-wrap: break-word;">${connectionString}</span><br><button class="copy-btn-inline" id="copy-connection-string">Copy</button><div style="font-size:12px; opacity: 0.7; margin-top: 8px;">ℹ️ Connect to your sub-wallet within 24 hours. Unused connections are deleted after 60 days.</div>`;
             document
               .getElementById("copy-connection-string")
               .addEventListener("click", function () {

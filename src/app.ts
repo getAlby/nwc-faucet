@@ -109,7 +109,7 @@ async function deleteApp(appPubkey: string): Promise<void> {
 }
 
 async function cleanupUnusedApps(): Promise<void> {
-  const pageSize = 100;
+  const pageSize = 5;
   let offset = 0;
   let pageLength = pageSize;
   let numScanned = 0;

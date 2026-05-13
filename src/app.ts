@@ -413,7 +413,7 @@ const start = async () => {
       host: "0.0.0.0",
     });
 
-    (async () => {
+    /*(async () => {
       while (true) {
         try {
           await cleanupUnusedApps();
@@ -422,7 +422,7 @@ const start = async () => {
         }
         await sleep(60 * 60 * 1000); // 1 hour
       }
-    })();
+    })();*/
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

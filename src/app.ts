@@ -150,8 +150,7 @@ async function cleanupUnusedApps(): Promise<void> {
       console.log(`Skipping non-faucet app: ${app.name} (${app.appPubkey})`);
       continue;
     }
-    // TODO: ensure the app's createdAt is at least an hour old before deleting,
-    // so we don't race with in-flight faucet creations.
+
     console.log(
       `Deleting unused app: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
     );

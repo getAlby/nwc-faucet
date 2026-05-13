@@ -112,8 +112,9 @@ async function cleanupUnusedApps(): Promise<void> {
   const pageSize = 100;
   let offset = 0;
   let pageLength = pageSize;
-  const candidates: { appPubkey: string; name: string; createdAt: string }[] =
-    [];
+  let numScanned = 0;
+  let numDeletedApps = 0;
+  let numFailedDeletes = 0;
 
   console.log("Starting unused apps cleanup...");
 
@@ -132,45 +133,46 @@ async function cleanupUnusedApps(): Promise<void> {
       apps: { appPubkey: string; name: string; createdAt: string }[];
     };
 
-    candidates.push(...apps);
+    for (const app of apps) {
+      ++numScanned;
+      if (
+        Date.now() - new Date(app.createdAt).getTime() <
+        24 * 60 * 60 * 1000
+      ) {
+        console.log(
+          `Skipping unused app created in last 24h: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
+        );
+        continue;
+      }
+      if (!app.name.startsWith(APP_NAME_PREFIX)) {
+        console.log(`Skipping non-faucet app: ${app.name} (${app.appPubkey})`);
+        continue;
+      }
+
+      console.log(
+        `Deleting unused app: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
+      );
+      try {
+        await deleteApp(app.appPubkey);
+        ++numDeletedApps;
+      } catch (err) {
+        ++numFailedDeletes;
+        console.error(
+          `Failed to delete unused app ${app.name} (${app.appPubkey}):`,
+          err,
+        );
+      }
+      // Don't abuse the delete endpoint
+      await sleep(1);
+    }
+
     pageLength = apps.length;
     offset += pageSize;
     await sleep(1000);
   }
 
-  let numDeletedApps = 0;
-  let numFailedDeletes = 0;
-  for (const app of candidates) {
-    if (Date.now() - new Date(app.createdAt).getTime() < 24 * 60 * 60 * 1000) {
-      console.log(
-        `Skipping unused app created in last 24h: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
-      );
-      continue;
-    }
-    if (!app.name.startsWith(APP_NAME_PREFIX)) {
-      console.log(`Skipping non-faucet app: ${app.name} (${app.appPubkey})`);
-      continue;
-    }
-
-    console.log(
-      `Deleting unused app: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
-    );
-    try {
-      await deleteApp(app.appPubkey);
-      ++numDeletedApps;
-    } catch (err) {
-      ++numFailedDeletes;
-      console.error(
-        `Failed to delete unused app ${app.name} (${app.appPubkey}):`,
-        err,
-      );
-    }
-    // Don't abuse the delete endpoint
-    await sleep(100);
-  }
-
   console.log(
-    `Unused apps cleanup done. Scanned ${candidates.length} apps, deleted ${numDeletedApps}, failed ${numFailedDeletes}.`,
+    `Unused apps cleanup done. Scanned ${numScanned} apps, deleted ${numDeletedApps}, failed ${numFailedDeletes}.`,
   );
 }
 

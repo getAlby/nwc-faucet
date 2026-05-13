@@ -139,6 +139,7 @@ async function cleanupUnusedApps(): Promise<void> {
   }
 
   let numDeletedApps = 0;
+  let numFailedDeletes = 0;
   for (const app of candidates) {
     if (Date.now() - new Date(app.createdAt).getTime() < 24 * 60 * 60 * 1000) {
       console.log(
@@ -154,14 +155,22 @@ async function cleanupUnusedApps(): Promise<void> {
     console.log(
       `Deleting unused app: ${app.name} (${app.appPubkey}) createdAt=${app.createdAt}`,
     );
-    await deleteApp(app.appPubkey);
+    try {
+      await deleteApp(app.appPubkey);
+      ++numDeletedApps;
+    } catch (err) {
+      ++numFailedDeletes;
+      console.error(
+        `Failed to delete unused app ${app.name} (${app.appPubkey}):`,
+        err,
+      );
+    }
     // Don't abuse the delete endpoint
     await sleep(100);
-    ++numDeletedApps;
   }
 
   console.log(
-    `Unused apps cleanup done. Scanned ${candidates.length} apps, deleted ${numDeletedApps}.`,
+    `Unused apps cleanup done. Scanned ${candidates.length} apps, deleted ${numDeletedApps}, failed ${numFailedDeletes}.`,
   );
 }
 

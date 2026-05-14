@@ -109,7 +109,7 @@ async function deleteApp(appPubkey: string): Promise<void> {
 }
 
 async function cleanupUnusedApps(): Promise<void> {
-  const pageSize = 20;
+  const pageSize = 100;
   let offset = 0;
   let pageLength = pageSize;
   let numScanned = 0;
@@ -413,7 +413,7 @@ const start = async () => {
       host: "0.0.0.0",
     });
 
-    /*(async () => {
+    (async () => {
       while (true) {
         try {
           await cleanupUnusedApps();
@@ -422,7 +422,7 @@ const start = async () => {
         }
         await sleep(60 * 60 * 1000); // 1 hour
       }
-    })();*/
+    })();
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);
